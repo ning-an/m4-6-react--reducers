@@ -1,32 +1,50 @@
-import React from 'react';
-import styled from 'styled-components';
-import CircularProgress from '@material-ui/core/CircularProgress';
+import React, { useContext } from "react";
+import styled from "styled-components";
+import CircularProgress from "@material-ui/core/CircularProgress";
 
-import { getRowName, getSeatNum } from '../helpers';
-import { range } from '../utils';
+import { getRowName, getSeatNum } from "../helpers";
+import { range } from "../utils";
+import { SeatContext } from "./SeatContext";
+import SeatImg from "../assets/seat-available.svg";
+import Tippy from "@tippyjs/react";
 
 const TicketWidget = () => {
+  const { state } = useContext(SeatContext);
   // TODO: use values from Context
-  const numOfRows = 6;
-  const seatsPerRow = 6;
+  const { numOfRows, seatsPerRow, hasLoaded, seats } = state;
+  console.log(seats);
 
   // TODO: implement the loading spinner <CircularProgress />
   // with the hasLoaded flag
-
   return (
     <Wrapper>
-      {range(numOfRows).map(rowIndex => {
+      {hasLoaded || <CircularProgress />}
+      {range(numOfRows).map((rowIndex) => {
         const rowName = getRowName(rowIndex);
 
         return (
           <Row key={rowIndex}>
             <RowLabel>Row {rowName}</RowLabel>
-            {range(seatsPerRow).map(seatIndex => {
+            {range(seatsPerRow).map((seatIndex) => {
               const seatId = `${rowName}-${getSeatNum(seatIndex)}`;
+              const seatOccupied = seats[seatId].isBooked;
 
               return (
                 <SeatWrapper key={seatId}>
-                  {/* TODO: Render the actual <Seat /> */}
+                  <Tippy
+                    content={
+                      <Tooltip>
+                        Row {rowName}, Seat {getSeatNum(seatIndex)} - $
+                        {seats[seatId].price}
+                      </Tooltip>
+                    }
+                  >
+                    <img
+                      src={SeatImg}
+                      alt="available seat"
+                      style={seatOccupied ? { filter: "grayscale(100%)" } : {}}
+                    />
+                  </Tippy>
                 </SeatWrapper>
               );
             })}
@@ -38,13 +56,18 @@ const TicketWidget = () => {
 };
 
 const Wrapper = styled.div`
-  background: #eee;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   border: 1px solid #ccc;
+  background: #eee;
   border-radius: 3px;
   padding: 8px;
 `;
 
 const Row = styled.div`
+  /* padding: 1px; */
   display: flex;
   position: relative;
 
@@ -55,10 +78,19 @@ const Row = styled.div`
 
 const RowLabel = styled.div`
   font-weight: bold;
+  position: absolute;
+  left: -80px;
+  top: 15px;
 `;
 
 const SeatWrapper = styled.div`
   padding: 5px;
+  cursor: pointer;
+`;
+
+const Tooltip = styled.span`
+  background-color: black;
+  opacity: 0.5;
 `;
 
 export default TicketWidget;
