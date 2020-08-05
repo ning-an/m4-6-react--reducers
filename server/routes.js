@@ -1,6 +1,3 @@
-/**
-  Endpoints related to feeds (ordered sets of tweets)
-*/
 const router = require("express").Router();
 const { delay } = require("./helpers");
 const NUM_OF_ROWS = 8;
@@ -13,40 +10,32 @@ for (let r = 0; r < row.length; r++) {
   for (let s = 1; s < 13; s++) {
     seats[`${row[r]}-${s}`] = {
       price: 225,
-      isBooked: false,
+      isBooked: Math.floor(Math.random() * 2) > 0,
     };
   }
 }
 // ----------------------------------
-let state = true;
-router.get("/api/seat-availability", (req, res) => {
-  if (state) {
-    randomlyBookSeats(30), (state = false);
-  }
+router.get("/api/seat-availability", async (req, res) => {
+  await delay(Math.random() * 3000);
   return res.json({
     seats: seats,
-    numOfRows: NUM_OF_ROWS,
-    seatsPerRow: SEATS_PER_ROW,
+    numOfRows: 8,
+    seatsPerRow: 12,
   });
 });
 let lastBookingAttemptSucceeded = false;
 router.post("/api/book-seat", async (req, res) => {
   const { seatId, creditCard, expiration } = req.body;
-  if (!state) {
-    state = {
-      bookedSeats: randomlyBookSeats(30),
-    };
-  }
-  const isAlreadyBooked = !!state.bookedSeats[seatId];
   await delay(Math.random() * 3000);
-  if (!creditCard || !expiration) {
-    return res.status(400).json({
-      message: "Please provide credit card information!",
-    });
-  }
-  if (isAlreadyBooked) {
+  if (seats[seatId].isBooked) {
     return res.status(400).json({
       message: "This seat has already been booked!",
+    });
+  }
+  if (!creditCard || !expiration) {
+    return res.status(400).json({
+      status: 400,
+      message: "Please provide credit card information!",
     });
   }
   if (lastBookingAttemptSucceeded) {
@@ -56,22 +45,10 @@ router.post("/api/book-seat", async (req, res) => {
     });
   }
   lastBookingAttemptSucceeded = !lastBookingAttemptSucceeded;
-  state.bookedSeats[seatId] = true;
-  return res.json({
+  seats[seatId].isBooked = true;
+  return res.status(200).json({
+    status: 200,
     success: true,
   });
 });
-//////// HELPERS
-const getRowName = (rowIndex) => {
-  return String.fromCharCode(65 + rowIndex);
-};
-const randomlyBookSeats = (num) => {
-  while (num > 0) {
-    const row = Math.floor(Math.random() * NUM_OF_ROWS);
-    const seat = Math.floor(Math.random() * SEATS_PER_ROW);
-    const seatId = `${getRowName(row)}-${seat + 1}`;
-    seats[seatId].isBooked = true;
-    num--;
-  }
-};
 module.exports = router;

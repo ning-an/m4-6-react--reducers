@@ -10,6 +10,7 @@ import DialogTitle from "@material-ui/core/DialogTitle";
 import { makeStyles } from "@material-ui/core/styles";
 import Paper from "@material-ui/core/Paper";
 import Grid from "@material-ui/core/Grid";
+import CircularProgress from "@material-ui/core/CircularProgress";
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -24,12 +25,17 @@ const useStyles = makeStyles((theme) => ({
 
 export const PurchaseModal = () => {
   const [creditCard, setCreditCard] = useState("");
-  const [exp, setExp] = useState("");
+  const [expiration, setExpiration] = useState("");
 
   const classes = useStyles();
   const {
-    bookingState: { selectedSeatId, price },
-    actions: { cancelBookingProcess },
+    bookingState: { selectedSeatId, price, status, error },
+    actions: {
+      cancelBookingProcess,
+      purchaseTicketRequest,
+      purchaseTicketFailure,
+      purchaseTicketSuccess,
+    },
   } = useContext(BookingContext);
   const handleClick = () => cancelBookingProcess();
   const handleEscape = (e) => {
@@ -37,8 +43,27 @@ export const PurchaseModal = () => {
       cancelBookingProcess();
     }
   };
+
   const handlePurchase = () => {
-    return null;
+    purchaseTicketRequest();
+    const ticketData = {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        seatId: `${selectedSeatId[0]}-${selectedSeatId[1]}`,
+        creditCard,
+        expiration,
+      }),
+    };
+    fetch("./api/book-seat", ticketData)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.status === 400) {
+          purchaseTicketFailure();
+        } else {
+          purchaseTicketSuccess();
+        }
+      });
   };
   return (
     <Dialog
@@ -46,6 +71,7 @@ export const PurchaseModal = () => {
       aria-label="purchase ticket"
       onKeyDown={handleEscape}
     >
+      {status === "awaiting-response" && <CircularProgress />}
       <DialogTitle>Purchase Ticket</DialogTitle>
       <DialogContent>
         <DialogContentText>
@@ -91,13 +117,33 @@ export const PurchaseModal = () => {
             shrink: true,
           }}
           variant="filled"
-          value={exp}
-          onChange={(e) => setExp(e.target.value)}
+          value={expiration}
+          onChange={(e) => setExpiration(e.target.value)}
         />
+        {error && <DialogContentText>{error}</DialogContentText>}
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClick}>Cancel</Button>
         <Button onClick={handlePurchase}>Purchase</Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
+export const PurchaseSuccessModal = () => {
+  const {
+    bookingState,
+    actions: { cancelBookingProcess },
+  } = useContext(BookingContext);
+  const handleClick = () => cancelBookingProcess();
+  return (
+    <Dialog
+      open={bookingState.status === "purchased"}
+      aria-label="ticket purchased"
+    >
+      <DialogContent>Ticket purchased successfully. Enjoy!</DialogContent>
+      <DialogActions>
+        <Button onClick={handleClick}>Close</Button>
       </DialogActions>
     </Dialog>
   );

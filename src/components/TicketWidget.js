@@ -8,7 +8,7 @@ import { SeatContext } from "./SeatContext";
 import { BookingContext } from "./BookingContext";
 import SeatImg from "../assets/seat-available.svg";
 import Tippy from "@tippyjs/react";
-import { PurchaseModal } from "./PurchaseModal";
+import { PurchaseModal, PurchaseSuccessModal } from "./PurchaseModal";
 
 const TicketWidget = () => {
   const { state } = useContext(SeatContext);
@@ -24,6 +24,7 @@ const TicketWidget = () => {
     <Wrapper>
       {hasLoaded || <CircularProgress />}
       {bookingState.selectedSeatId && <PurchaseModal />}
+      <PurchaseSuccessModal />
       {range(numOfRows).map((rowIndex) => {
         const rowName = getRowName(rowIndex);
 
