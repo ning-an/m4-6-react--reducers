@@ -10,12 +10,13 @@ const initialState = {
 };
 const reducer = (state, action) => {
   if (action.type === "begin-booking-process") {
-    console.log(action);
     return {
       ...state,
-      selectedSeatId: [action.rowIndex, action.seatIndex],
+      selectedSeatId: [action.rowName, action.seatIndex],
       price: action.price,
     };
+  } else if (action.type === "cancel-booking-process") {
+    return initialState;
   }
   return state;
 };
@@ -26,10 +27,16 @@ export const BookingProvider = ({ children }) => {
   const beginBookingProcess = (data) => {
     dispatch({ type: "begin-booking-process", ...data });
   };
+  const cancelBookingProcess = () => {
+    dispatch({ type: "cancel-booking-process" });
+  };
 
   return (
     <BookingContext.Provider
-      value={{ bookingState, actions: { beginBookingProcess } }}
+      value={{
+        bookingState,
+        actions: { beginBookingProcess, cancelBookingProcess },
+      }}
     >
       {children}
     </BookingContext.Provider>

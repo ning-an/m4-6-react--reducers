@@ -8,6 +8,7 @@ import { SeatContext } from "./SeatContext";
 import { BookingContext } from "./BookingContext";
 import SeatImg from "../assets/seat-available.svg";
 import Tippy from "@tippyjs/react";
+import { PurchaseModal } from "./PurchaseModal";
 
 const TicketWidget = () => {
   const { state } = useContext(SeatContext);
@@ -17,12 +18,12 @@ const TicketWidget = () => {
   } = useContext(BookingContext);
   // TODO: use values from Context
   const { numOfRows, seatsPerRow, hasLoaded, seats } = state;
-
   // TODO: implement the loading spinner <CircularProgress />
   // with the hasLoaded flag
   return (
     <Wrapper>
       {hasLoaded || <CircularProgress />}
+      {bookingState.selectedSeatId && <PurchaseModal />}
       {range(numOfRows).map((rowIndex) => {
         const rowName = getRowName(rowIndex);
 
@@ -35,11 +36,12 @@ const TicketWidget = () => {
               return (
                 <SeatWrapper key={seatId}>
                   <Seat
-                    rowIndex={rowIndex + 1}
+                    rowName={rowName}
                     seatIndex={seatIndex + 1}
                     price={seats[seatId].price}
                     availability={!seats[seatId].isBooked}
                     beginBookingProcess={beginBookingProcess}
+                    selectedSeatId={bookingState.selectedSeatId}
                   />
                 </SeatWrapper>
               );
@@ -51,6 +53,36 @@ const TicketWidget = () => {
   );
 };
 
+const Seat = ({
+  rowName,
+  seatIndex,
+  price,
+  availability,
+  beginBookingProcess,
+  selectedSeatId,
+}) => {
+  return (
+    <Tippy
+      content={
+        <Tooltip>
+          Row {rowName}, Seat {seatIndex} - ${price}
+        </Tooltip>
+      }
+    >
+      <SeatBtn
+        disabled={!availability}
+        availability={availability}
+        onClick={() => beginBookingProcess({ rowName, seatIndex, price })}
+      >
+        <img
+          src={SeatImg}
+          alt="available seat"
+          style={!availability ? { filter: "grayscale(100%)" } : {}}
+        />
+      </SeatBtn>
+    </Tippy>
+  );
+};
 const Wrapper = styled.div`
   position: absolute;
   top: 50%;
@@ -105,33 +137,4 @@ const SeatBtn = styled.button`
   }
 `;
 
-const Seat = ({
-  rowIndex,
-  seatIndex,
-  price,
-  availability,
-  beginBookingProcess,
-}) => {
-  return (
-    <Tippy
-      content={
-        <Tooltip>
-          Row {rowIndex}, Seat {seatIndex} - ${price}
-        </Tooltip>
-      }
-    >
-      <SeatBtn
-        disabled={!availability}
-        availability={availability}
-        onClick={() => beginBookingProcess({ rowIndex, seatIndex, price })}
-      >
-        <img
-          src={SeatImg}
-          alt="available seat"
-          style={!availability ? { filter: "grayscale(100%)" } : {}}
-        />
-      </SeatBtn>
-    </Tippy>
-  );
-};
 export default TicketWidget;
